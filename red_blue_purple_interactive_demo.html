@@ -1,0 +1,280 @@
+
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: transparent; }
+  #demo { font-family: var(--font-mono); padding: 1rem 0; }
+  #header { display: flex; align-items: center; gap: 12px; margin-bottom: 1.5rem; }
+  #header h2 { font-size: 16px; font-weight: 500; color: var(--color-text-primary); font-family: var(--font-sans); }
+  #header .badge { font-size: 11px; padding: 3px 10px; border-radius: 20px; font-family: var(--font-sans); font-weight: 500; }
+  .badge-red { background: #FCEBEB; color: #A32D2D; }
+  .badge-blue { background: #E6F1FB; color: #185FA5; }
+  .badge-purple { background: #EEEDFE; color: #534AB7; }
+
+  #terminal {
+    background: #0d0d0d;
+    border-radius: var(--border-radius-lg);
+    border: 0.5px solid #333;
+    padding: 1rem 1.25rem;
+    min-height: 320px;
+    max-height: 380px;
+    overflow-y: auto;
+    margin-bottom: 1rem;
+  }
+  .term-line { font-size: 13px; line-height: 1.8; display: flex; gap: 8px; align-items: flex-start; }
+  .term-prefix { font-weight: 500; white-space: nowrap; }
+  .term-text { color: #ccc; }
+  .red-text { color: #f87171; }
+  .blue-text { color: #60a5fa; }
+  .purple-text { color: #a78bfa; }
+  .green-text { color: #4ade80; }
+  .yellow-text { color: #fbbf24; }
+  .cursor { display: inline-block; width: 8px; height: 14px; background: #4ade80; vertical-align: middle; animation: blink 1s infinite; margin-left: 2px; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  #controls { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  #next-btn {
+    background: #0d0d0d;
+    border: 1px solid #4ade80;
+    color: #4ade80;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 8px 20px;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  #next-btn:hover { background: #1a1a1a; }
+  #next-btn:disabled { border-color: #444; color: #444; cursor: not-allowed; }
+  #reset-btn {
+    background: transparent;
+    border: 1px solid #555;
+    color: #888;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    padding: 8px 16px;
+    border-radius: var(--border-radius-md);
+    cursor: pointer;
+  }
+  #reset-btn:hover { border-color: #888; color: #aaa; }
+  #step-indicator { font-family: var(--font-sans); font-size: 13px; color: var(--color-text-secondary); margin-left: auto; }
+
+  #progress-bar { height: 3px; background: #1a1a1a; border-radius: 2px; margin-bottom: 1rem; overflow: hidden; }
+  #progress-fill { height: 100%; background: #4ade80; border-radius: 2px; transition: width 0.4s ease; width: 0%; }
+
+  #legend { display: flex; gap: 16px; margin-bottom: 1rem; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 12px; font-family: var(--font-sans); color: var(--color-text-secondary); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+</style>
+
+<div id="demo">
+  <h2 class="sr-only">Interactive red blue purple team attack defense demo</h2>
+  <div id="header">
+    <h2>CorpNet Attack / Defense Demo</h2>
+    <span class="badge badge-red">Red</span>
+    <span class="badge badge-blue">Blue</span>
+    <span class="badge badge-purple">Purple</span>
+  </div>
+
+  <div id="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#f87171"></div>Red Operator</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#60a5fa"></div>SOC Analyst</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#fbbf24"></div>IR Lead / Threat Hunter</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#a78bfa"></div>Purple Lead</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#4ade80"></div>System</div>
+  </div>
+
+  <div id="progress-bar"><div id="progress-fill"></div></div>
+
+  <div id="terminal">
+    <div class="term-line"><span class="term-prefix green-text">$</span><span class="term-text">Initializing CorpNet simulation... press <span style="color:#fbbf24">[ Next Step ]</span> to begin</span></div>
+    <div class="term-line" style="margin-top:8px"><span class="term-prefix green-text">></span><span class="term-text">Target: CorpNet Financial Services | Environment: Corporate AD + Azure</span></div>
+    <div class="term-line"><span class="term-prefix green-text">></span><span class="term-text">Duration: 2-day simulated campaign</span></div>
+    <div class="term-line" style="margin-top:8px"><span class="cursor"></span></div>
+  </div>
+
+  <div id="controls">
+    <button id="next-btn" onclick="nextStep()">[ Next Step ]</button>
+    <button id="reset-btn" onclick="resetDemo()">[ Reset ]</button>
+    <span id="step-indicator">Step 0 / 8</span>
+  </div>
+</div>
+
+<script>
+const steps = [
+  {
+    lines: [
+      { prefix: "DAY 1 — 09:00", cls: "yellow-text", text: "" },
+      { prefix: "[RED]", cls: "red-text", text: 'Running OSINT on corpnet.com...' },
+      { prefix: "[RED]", cls: "red-text", text: 'Email pattern found: firstname.lastname@corpnet.com' },
+      { prefix: "[RED]", cls: "red-text", text: 'Target selected: j.smith@corpnet.com (HR dept)' },
+      { prefix: "[RED]", cls: "red-text", text: 'Crafting spear-phishing email — subject: "URGENT: Payroll Update"' },
+      { prefix: "[RED]", cls: "red-text", text: 'Payload: macro-enabled DOCX with reverse shell embedded' },
+      { prefix: "[RED]", cls: "red-text", text: 'Email sent. Waiting for execution...' },
+    ],
+    label: "Step 1/8 — Red: Recon & Initial Access"
+  },
+  {
+    lines: [
+      { prefix: "09:17", cls: "yellow-text", text: "" },
+      { prefix: "[SIEM]", cls: "green-text", text: '!! ALERT !! Suspicious process spawned on CORPNET\\HRPC01' },
+      { prefix: "[SIEM]", cls: "green-text", text: 'WINWORD.EXE launched PowerShell.exe — anomaly detected' },
+      { prefix: "[SIEM]", cls: "green-text", text: 'Outbound connection to 185.220.x.x:4444 flagged' },
+      { prefix: "[BLUE]", cls: "blue-text", text: 'SOC Analyst: Alert confirmed. Escalating to Tier 2 immediately.' },
+      { prefix: "[BLUE]", cls: "blue-text", text: 'Opening incident ticket IR-2024-0411...' },
+    ],
+    label: "Step 2/8 — Blue: SIEM Alert Fires"
+  },
+  {
+    lines: [
+      { prefix: "09:22", cls: "yellow-text", text: "" },
+      { prefix: "[RED]", cls: "red-text", text: 'Beacon established on HRPC01. Shell active.' },
+      { prefix: "[RED]", cls: "red-text", text: '> whoami /all' },
+      { prefix: "[RED]", cls: "red-text", text: '  CORPNET\\jsmith — Domain User' },
+      { prefix: "[RED]", cls: "red-text", text: '> net localgroup administrators' },
+      { prefix: "[RED]", cls: "red-text", text: 'Enumerating network shares and mapped drives...' },
+      { prefix: "[RED]", cls: "red-text", text: 'Finance server accessible! Moving laterally...' },
+      { prefix: "[RED]", cls: "red-text", text: 'Using Pass-the-Hash to authenticate to FINSERVER01' },
+    ],
+    label: "Step 3/8 — Red: Lateral Movement"
+  },
+  {
+    lines: [
+      { prefix: "09:35", cls: "yellow-text", text: "" },
+      { prefix: "[BLUE]", cls: "blue-text", text: 'IR Lead: Isolating HRPC01 from network NOW.' },
+      { prefix: "[BLUE]", cls: "blue-text", text: 'Blocking outbound TCP:4444 at perimeter firewall.' },
+      { prefix: "[BLUE]", cls: "blue-text", text: 'Capturing full memory dump of HRPC01 for forensics.' },
+      { prefix: "[BLUE]", cls: "blue-text", text: 'Resetting credentials for jsmith account.' },
+      { prefix: "[BLUE]", cls: "blue-text", text: 'C2 connection disrupted. Host contained.' },
+    ],
+    label: "Step 4/8 — Blue: Containment"
+  },
+  {
+    lines: [
+      { prefix: "10:05", cls: "yellow-text", text: "" },
+      { prefix: "[RED]", cls: "red-text", text: 'C2 channel lost. Adapting...' },
+      { prefix: "[RED]", cls: "red-text", text: 'Switching to DNS-over-HTTPS for covert communication' },
+      { prefix: "[RED]", cls: "red-text", text: '> schtasks /create /tn "WindowsUpdate" /tr "powershell.exe -enc [payload]"' },
+      { prefix: "[RED]", cls: "red-text", text: 'Persistence established via scheduled task.' },
+      { prefix: "[RED]", cls: "red-text", text: 'Backup access secured. Waiting...' },
+    ],
+    label: "Step 5/8 — Red: Persistence Attempt"
+  },
+  {
+    lines: [
+      { prefix: "10:30", cls: "yellow-text", text: "" },
+      { prefix: "[BLUE]", cls: "blue-text", text: 'Threat Hunter: Not waiting for alerts. Hunting proactively.' },
+      { prefix: "[BLUE]", cls: "blue-text", text: 'Querying EDR for suspicious schtasks across all endpoints...' },
+      { prefix: "[BLUE]", cls: "blue-text", text: 'FOUND: Scheduled task "WindowsUpdate" with encoded payload on HRPC01' },
+      { prefix: "[BLUE]", cls: "blue-text", text: 'Removing task. Blocking DNS-over-HTTPS at proxy.' },
+      { prefix: "[BLUE]", cls: "blue-text", text: 'Attacker fully evicted from environment.' },
+      { prefix: "[BLUE]", cls: "blue-text", text: 'Incident contained. Evidence preserved.' },
+    ],
+    label: "Step 6/8 — Blue: Threat Hunting"
+  },
+  {
+    lines: [
+      { prefix: "DAY 2 — 14:00", cls: "yellow-text", text: "" },
+      { prefix: "[PURPLE]", cls: "purple-text", text: 'Purple Lead: Joint debrief starting. Red + Blue in the room.' },
+      { prefix: "[PURPLE]", cls: "purple-text", text: 'Finding: Red was undetected on HRPC01 for 17 minutes.' },
+      { prefix: "[PURPLE]", cls: "purple-text", text: 'Gap: No detection rule for Word spawning PowerShell.' },
+      { prefix: "[RED]", cls: "red-text", text: 'Confirmed: macro->PowerShell is a common TTP (T1566 + T1059)' },
+      { prefix: "[BLUE]", cls: "blue-text", text: 'Confirmed: SIEM had no Sigma rule for this chain.' },
+      { prefix: "[PURPLE]", cls: "purple-text", text: 'Action: Writing new detection rule together NOW.' },
+    ],
+    label: "Step 7/8 — Purple: Joint Debrief"
+  },
+  {
+    lines: [
+      { prefix: "14:15", cls: "yellow-text", text: "" },
+      { prefix: "[BLUE]", cls: "blue-text", text: 'New Sigma rule: IF WINWORD.EXE spawns PowerShell.exe -> ALERT P1' },
+      { prefix: "[BLUE]", cls: "blue-text", text: 'Testing rule against 90 days of historical logs...' },
+      { prefix: "[SIEM]", cls: "green-text", text: '!! 3 prior undetected events found in historical data !!' },
+      { prefix: "[PURPLE]", cls: "purple-text", text: 'Rule deployed to production SIEM.' },
+      { prefix: "[PURPLE]", cls: "purple-text", text: 'MTTD improved: 17 min -> under 60 seconds.' },
+      { prefix: "[PURPLE]", cls: "purple-text", text: 'ATT&CK coverage: 30% -> 94%' },
+      { prefix: "[PURPLE]", cls: "purple-text", text: '12 new detection rules added this cycle.' },
+      { prefix: ">>>", cls: "green-text", text: 'Simulation complete. Red breaks. Blue defends. Purple improves.' },
+    ],
+    label: "Step 8/8 — Results"
+  }
+];
+
+let currentStep = 0;
+let isTyping = false;
+
+function typeLines(lines, callback) {
+  const terminal = document.getElementById('terminal');
+  let i = 0;
+  function typeLine() {
+    if (i >= lines.length) { if(callback) callback(); return; }
+    const l = lines[i];
+    if (!l.text && l.prefix) {
+      const div = document.createElement('div');
+      div.className = 'term-line';
+      div.style.marginTop = '10px';
+      div.innerHTML = `<span class="term-prefix ${l.cls}">${l.prefix}</span>`;
+      terminal.appendChild(div);
+      terminal.scrollTop = terminal.scrollHeight;
+      i++; setTimeout(typeLine, 80);
+      return;
+    }
+    const div = document.createElement('div');
+    div.className = 'term-line';
+    div.innerHTML = `<span class="term-prefix ${l.cls}">${l.prefix}</span><span class="term-text"></span>`;
+    terminal.appendChild(div);
+    const textEl = div.querySelector('.term-text');
+    let ci = 0;
+    function typeChar() {
+      if (ci <= l.text.length) {
+        textEl.textContent = l.text.slice(0, ci);
+        terminal.scrollTop = terminal.scrollHeight;
+        ci++;
+        setTimeout(typeChar, ci < l.text.length ? 18 : 0);
+      } else {
+        i++;
+        setTimeout(typeLine, 120);
+      }
+    }
+    typeChar();
+  }
+  typeLine();
+}
+
+function nextStep() {
+  if (isTyping || currentStep >= steps.length) return;
+  isTyping = true;
+  document.getElementById('next-btn').disabled = true;
+
+  const step = steps[currentStep];
+  const terminal = document.getElementById('terminal');
+  const spacer = document.createElement('div');
+  spacer.style.marginTop = '14px';
+  terminal.appendChild(spacer);
+
+  typeLines(step.lines, () => {
+    currentStep++;
+    isTyping = false;
+    const pct = (currentStep / steps.length) * 100;
+    document.getElementById('progress-fill').style.width = pct + '%';
+    document.getElementById('step-indicator').textContent = `Step ${currentStep} / ${steps.length}`;
+    document.getElementById('next-btn').disabled = currentStep >= steps.length;
+    if (currentStep >= steps.length) {
+      document.getElementById('next-btn').textContent = '[ Done ]';
+    }
+  });
+}
+
+function resetDemo() {
+  currentStep = 0;
+  isTyping = false;
+  document.getElementById('terminal').innerHTML = `
+    <div class="term-line"><span class="term-prefix green-text">$</span><span class="term-text">Initializing CorpNet simulation... press <span style="color:#fbbf24">[ Next Step ]</span> to begin</span></div>
+    <div class="term-line" style="margin-top:8px"><span class="term-prefix green-text">></span><span class="term-text">Target: CorpNet Financial Services | Environment: Corporate AD + Azure</span></div>
+    <div class="term-line"><span class="term-prefix green-text">></span><span class="term-text">Duration: 2-day simulated campaign</span></div>
+    <div class="term-line" style="margin-top:8px"><span class="cursor"></span></div>`;
+  document.getElementById('progress-fill').style.width = '0%';
+  document.getElementById('step-indicator').textContent = 'Step 0 / 8';
+  document.getElementById('next-btn').disabled = false;
+  document.getElementById('next-btn').textContent = '[ Next Step ]';
+}
+</script>
